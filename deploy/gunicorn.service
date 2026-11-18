@@ -1,0 +1,15 @@
+[Unit]
+Description=Gunicorn for exam Django project
+After=network.target
+
+[Service]
+User=www-data
+Group=www-data
+WorkingDirectory=/srv/exam
+EnvironmentFile=/srv/exam/.env
+ExecStart=/srv/exam/venv/bin/gunicorn server.wsgi:application --workers 3 --bind unix:/run/exam/gunicorn.sock
+RuntimeDirectory=exam
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
