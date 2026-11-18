@@ -9,8 +9,16 @@ REPO=https://github.com/Mans-techno/Exam.git
 if systemctl list-unit-files exam.service >/dev/null 2>&1 && [ ! -d "$APP" ]; then
   echo "Служба exam.service уже существует и не наша — остановка."; exit 1
 fi
-apt update
-apt install -y python3 python3-venv python3-pip git nginx certbot python3-certbot-nginx
+PKGS="python3 python3-venv python3-pip git nginx certbot python3-certbot-nginx"
+MISSING=""
+for p in $PKGS; do dpkg-query -W -f='${Status}' "$p" 2>/dev/null | grep -q "install ok installed" || MISSING="$MISSING $p"; done
+if [ -n "$MISSING" ]; then
+  echo "Устанавливаю:$MISSING"
+  apt-get -o DPkg::Lock::Timeout=600 update
+  apt-get -o DPkg::Lock::Timeout=600 install -y $MISSING
+else
+  echo "Все пакеты уже установлены, apt не нужен."
+fi
 
 if [ -d "$APP/.git" ]; then git -C "$APP" pull; else git clone "$REPO" "$APP"; fi
 cd "$APP"
