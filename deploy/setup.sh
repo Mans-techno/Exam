@@ -5,6 +5,10 @@ DOMAIN="${1:?Укажите домен: bash setup.sh yourdomain.com}"
 APP=/srv/exam
 REPO=https://github.com/Mans-techno/Exam.git
 
+# Shared server: only install what is missing, never touch other sites.
+if systemctl list-unit-files exam.service >/dev/null 2>&1 && [ ! -d "$APP" ]; then
+  echo "Служба exam.service уже существует и не наша — остановка."; exit 1
+fi
 apt update
 apt install -y python3 python3-venv python3-pip git nginx certbot python3-certbot-nginx
 
@@ -38,8 +42,8 @@ systemctl restart exam
 
 sed "s/DOMAIN/$DOMAIN/g" deploy/nginx.conf > /etc/nginx/sites-available/exam
 ln -sf /etc/nginx/sites-available/exam /etc/nginx/sites-enabled/exam
-rm -f /etc/nginx/sites-enabled/default
-nginx -t && systemctl reload nginx
+nginx -t || { rm -f /etc/nginx/sites-enabled/exam; echo "Ошибка nginx, наш конфиг отключён"; exit 1; }
+systemctl reload nginx
 
 ufw allow 'Nginx Full' >/dev/null 2>&1 || true
 
